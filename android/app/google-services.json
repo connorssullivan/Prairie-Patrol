@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "731242768427",
+    "project_id": "prairiepatrol",
+    "storage_bucket": "prairiepatrol.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:731242768427:android:f3ba289b78e4679fdca26e",
+        "android_client_info": {
+          "package_name": "com.connorsullivan.prairiepatrol"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCGh-3Xkhn-VY3nRxxLHfBypwOvlMZp5zA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

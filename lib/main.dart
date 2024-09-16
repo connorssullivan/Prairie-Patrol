@@ -10,7 +10,15 @@ void main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown, // Optional: Allow upside-down portrait
   ]);
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+      options: FirebaseOptions(
+        apiKey: 'AIzaSyCGh-3Xkhn-VY3nRxxLHfBypwOvlMZp5zA',
+        appId: '1:731242768427:android:f3ba289b78e4679fdca26e',
+        messagingSenderId: '383665209766',
+        projectId: 'prairiepatrol',
+        storageBucket: 'prairiepatrol.appspot.com',
+      )
+  );
   runApp(const MyApp());
 }
 
