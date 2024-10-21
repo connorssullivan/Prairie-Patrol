@@ -59,6 +59,12 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // Function to trap a random dog
+  void _trapRandomDog() async {
+    await dogsService.trapRandomDog(); // Call the function to trap a random dog
+    _checkForTrappedDogs(); // Check for trapped dogs after trapping
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -125,6 +131,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _trapRandomDog, // Call the function to trap a random dog
+        tooltip: 'Trap Random Dog',
+        child: const Icon(Icons.pets), // Use an appropriate icon
       ),
     );
   }
