@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:prairiepatrol/screens/home/views/home_screen.dart';
 import 'package:prairiepatrol/screens/home/views/stats_screen.dart';
+import 'package:prairiepatrol/screens/home/views/login_page.dart';
 
 class Skeleton extends StatefulWidget {
   const Skeleton({super.key});
