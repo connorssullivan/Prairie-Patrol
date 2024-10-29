@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
 class LoginPage extends StatefulWidget {
-  final VoidCallback onLogin;
-
-  const LoginPage({super.key, required this.onLogin});
+  const LoginPage({super.key});
 
   @override
   _LoginPageState createState() => _LoginPageState();
@@ -17,14 +15,14 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Zoo Worker Login'),
+        title: Text('Salisbury Zoo Employee Login'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Image.asset('assets/images/zoo_logo.png', height: 100), // Add a zoo logo
+            Image.asset('assets/images/zoo_logo.png', height: 100),
             SizedBox(height: 20),
             Text(
               'Welcome to Prairie Patrol',
@@ -52,20 +50,29 @@ class _LoginPageState extends State<LoginPage> {
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                // Add your login logic here
-                if (_usernameController.text == 'admin' && _passwordController.text == 'admin') {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login successful')));
-                  widget.onLogin(); // Call the login callback
+                // Check credentials
+                if (_usernameController.text == 'admin' &&
+                    _passwordController.text == 'admin') {
+                  // Show success message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Login successful')),
+                  );
+
+                  // Navigate to home screen
+                  Navigator.of(context).pushReplacementNamed('/home');
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed')));
+                  // Show failure message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Login failed')),
+                  );
                 }
               },
+              child: Text('Login', style: TextStyle(color: Colors.black)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green, // Corrected button color parameter
+                backgroundColor: Colors.green,
                 padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                 textStyle: TextStyle(fontSize: 18),
               ),
-              child: Text('Login'),
             ),
           ],
         ),

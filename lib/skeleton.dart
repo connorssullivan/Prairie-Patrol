@@ -43,11 +43,11 @@ class _SkeletonState extends State<Skeleton> {
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Home',
+            label: 'Cage',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.bar_chart),
-            label: 'Home',
+            label: 'Animal Stats',
           ),
           ],
       ),

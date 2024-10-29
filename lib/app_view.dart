@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:prairiepatrol/screens/home/views/login_page.dart'; // Import the LoginPage
 import 'skeleton.dart'; // Import the Skeleton widget
+import 'package:prairiepatrol/screens/home/views/splash_screen.dart'; // Import the SplashScreen
 
 class MyAppView extends StatefulWidget {
   const MyAppView({super.key});
@@ -16,7 +17,13 @@ class _MyAppViewState extends State<MyAppView> {
     setState(() {
       _isLoggedIn = true;
     });
+
+    // Delayed navigation to ensure context is valid after the state update
+    Future.delayed(Duration.zero, () {
+      Navigator.of(context).pushReplacementNamed('/home');
+    });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +40,12 @@ class _MyAppViewState extends State<MyAppView> {
           outline: Colors.grey,
         ),
       ),
-      home: _isLoggedIn ? const Skeleton() : LoginPage(onLogin: _login), // Show LoginPage or Skeleton based on login status
+      initialRoute: '/',
+      routes: {
+        '/': (context) => SplashScreen(),
+        '/login': (context) => LoginPage(),
+        '/home': (context) => Skeleton(),
+      },
     );
   }
 }
