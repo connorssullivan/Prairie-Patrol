@@ -31,7 +31,7 @@ class _SkeletonState extends State<Skeleton> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Pari Patrol',
+          'Prairie Patrol',
           style: TextStyle(color: Colors.green),
         ),
       ),
