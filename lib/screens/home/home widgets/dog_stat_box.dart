@@ -1,25 +1,23 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../services/dogs_service.dart';
-
-
+import '../../../services/rt_dogs_service.dart';
 
 class DogStatsBox extends StatelessWidget {
   final String dogId;
 
   const DogStatsBox({required this.dogId, Key? key}) : super(key: key);
 
-  String _formatTimestamp(Timestamp? timestamp) {
+  String _formatTimestamp(String? timestamp) {
     if (timestamp == null) return 'N/A';
-    DateTime dateTime = timestamp.toDate();
+    DateTime dateTime = DateTime.parse(timestamp);
     return DateFormat.yMMMMd().format(dateTime);
   }
 
   Future<Map<String, dynamic>?> _fetchDogStats() async {
-    return await DogsService().getDogStatsById(dogId);
+    return await RTDogsService().getDogStatsById(dogId);
   }
 
   String _getDogImage(String name) {
