@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+import 'package:flutter/material.dart';
+
+import '../../../services/auth.dart';
+
+
 class LoginPage extends StatefulWidget {
   final VoidCallback onLogin;
 
@@ -12,6 +17,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final Auth _auth = Auth(); // Create an instance of the Auth class
 
   @override
   Widget build(BuildContext context) {
@@ -51,9 +57,16 @@ class _LoginPageState extends State<LoginPage> {
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                // Add your login logic here
-                if (_usernameController.text == 'admin' && _passwordController.text == 'admin') {
+              onPressed: () async {
+                String email = _usernameController.text;
+                String password = _passwordController.text;
+
+                // Use Auth class to attempt login
+                var user = await _auth.signInWithEmail(email, password);
+                print(email);
+                print(password);
+
+                if (user != null) {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login successful')));
                   widget.onLogin(); // Call the login callback
                 } else {
@@ -73,3 +86,4 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+

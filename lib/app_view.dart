@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:prairiepatrol/screens/home/views/login_page.dart'; // Import the LoginPage
+import 'package:prairiepatrol/screens/home/views/splash_screen.dart';
 import 'skeleton.dart'; // Import the Skeleton widget
-
 class MyAppView extends StatefulWidget {
   const MyAppView({super.key});
 
@@ -11,6 +11,19 @@ class MyAppView extends StatefulWidget {
 
 class _MyAppViewState extends State<MyAppView> {
   bool _isLoggedIn = false; // Track login status
+  bool _showSplashScreen = true; // Track splash screen visibility
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Show splash screen for 5 seconds and then show login or main content
+    Future.delayed(const Duration(seconds: 5), () {
+      setState(() {
+        _showSplashScreen = false; // Hide splash screen after 5 seconds
+      });
+    });
+  }
 
   void _login() {
     setState(() {
@@ -33,7 +46,11 @@ class _MyAppViewState extends State<MyAppView> {
           outline: Colors.grey,
         ),
       ),
-      home: _isLoggedIn ? const Skeleton() : LoginPage(onLogin: _login), // Show LoginPage or Skeleton based on login status
+      home: _showSplashScreen
+          ? const SplashScreen() // Show splash screen for 5 seconds
+          : _isLoggedIn
+          ? const Skeleton() // Main app content when logged in
+          : LoginPage(onLogin: _login), // Login page when not logged in
     );
   }
 }
