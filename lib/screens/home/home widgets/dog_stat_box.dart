@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../services/dogs_service.dart';
 
 
+
 class DogStatsBox extends StatelessWidget {
   final String dogId;
 
