@@ -107,6 +107,15 @@ class RTDogsService {
     }
   }
 
+  Future<void> updateDogStats(String dogId, Map<String, dynamic> updatedStats) async {
+    try {
+      await dbRef.child('dogs/$dogId').update(updatedStats);
+      print('Dog stats updated successfully for ID: $dogId');
+    } catch (e) {
+      print('Error updating dog stats: $e');
+    }
+  }
+
   Future<void> selectDog(String dog) async {
     try {
       // Get the RFID of the selected dog
