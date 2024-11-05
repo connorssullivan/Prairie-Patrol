@@ -1,6 +1,7 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:prairiepatrol/screens/home/views/settings_screen.dart';
 import '../../../services/auth.dart'; // Import your login page
 
 class DrawerScreen extends StatefulWidget {
@@ -52,6 +53,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
                   icon: Icons.settings,
                   onTap: () {
                     // Navigate to settings if needed
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen()));
                   },
                 ),
                 const SizedBox(height: 20),
