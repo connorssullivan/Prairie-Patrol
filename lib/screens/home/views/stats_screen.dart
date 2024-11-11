@@ -1,9 +1,9 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../services/dogs_service.dart';
+import '../../../services/rt_dogs_service.dart';
 import '../home widgets/dog_stat_box.dart';
 
 class StatsScreen extends StatefulWidget {
@@ -14,7 +14,7 @@ class StatsScreen extends StatefulWidget {
 }
 
 class _StatsScreenState extends State<StatsScreen> {
-  DogsService dogsService = DogsService();
+  RTDogsService dogsService = RTDogsService();
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +23,7 @@ class _StatsScreenState extends State<StatsScreen> {
         title: Text('Dog Stats'),
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: dogsService.getAllDogStats(), // Fetching data from Firestore
+        future: dogsService.getAllDogStats(), // Fetching data from Realtime Database
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator()); // Show loader while fetching data
