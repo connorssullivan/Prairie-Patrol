@@ -1,8 +1,7 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
-
 import '../../../services/rt_dogs_service.dart';
+import 'notif_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -65,13 +64,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Function to select a dog from the dropdown
   void _selectDog(String dog) async {
-      await dogsService.selectDog(dog);
-      print('Dog selected: $dog');
+    await dogsService.selectDog(dog);
+    print('Dog selected: $dog');
   }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+    final buttonDistance = 100.0; // Distance between the floating action buttons and the center button
 
     return Scaffold(
       body: Container(
@@ -138,10 +138,36 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _trapRandomDog, // Call the function to trap a random dog
-        tooltip: 'Trap Random Dog',
-        child: const Icon(Icons.pets), // Use an appropriate icon
+      floatingActionButton: Stack(
+        children: [
+          // Positioned FloatingActionButton for "Trap Random Dog"
+          Positioned(
+            left: screenWidth / 2 - buttonDistance, // Position this button on the left
+            bottom: 150, // Align to the same level as the "Release" button
+            child: FloatingActionButton(
+              onPressed: _trapRandomDog, // Call the function to trap a random dog
+              tooltip: 'Trap Random Dog',
+              child: const Icon(Icons.pets), // Use an appropriate icon
+            ),
+          ),
+
+          // Positioned FloatingActionButton for "Go to Notifications"
+          Positioned(
+            left: screenWidth / 2 + buttonDistance, // Position this button on the right
+            bottom: 150, // Align to the same level as the "Release" button
+            child: FloatingActionButton(
+              onPressed: () {
+                // Navigate to the NotificationScreen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => NotificationScreen()),
+                );
+              },
+              tooltip: 'Go to Notifications',
+              child: const Icon(Icons.notifications),
+            ),
+          ),
+        ],
       ),
     );
   }
