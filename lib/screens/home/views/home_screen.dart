@@ -138,10 +138,27 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _trapRandomDog, // Call the function to trap a random dog
-        tooltip: 'Trap Random Dog',
-        child: const Icon(Icons.pets), // Use an appropriate icon
+      floatingActionButton: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            onPressed: _trapRandomDog, // Call the function to trap a random dog
+            tooltip: 'Trap Random Dog',
+            child: const Icon(Icons.pets), // Use an appropriate icon
+          ),
+          SizedBox(width: 20), // Space between buttons
+          FloatingActionButton(
+            onPressed: () {
+              // Navigate to the NotificationScreen
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => NotificationScreen()),
+              );
+            },
+            tooltip: 'Go to Notifications',
+            child: const Icon(Icons.notifications),
+          ),
+        ],
       ),
     );
   }
