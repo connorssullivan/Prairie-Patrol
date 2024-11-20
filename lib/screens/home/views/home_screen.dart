@@ -155,20 +155,42 @@ class _HomeScreenState extends State<HomeScreen> {
           Positioned(
             left: screenWidth / 2 + buttonDistance, // Position this button on the right
             bottom: 150, // Align to the same level as the "Release" button
-            child: FloatingActionButton(
-              onPressed: () {
-                // Navigate to the NotificationScreen
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => NotificationScreen()),
-                );
-              },
-              tooltip: 'Go to Notifications',
-              child: const Icon(Icons.notifications),
+            child: Stack(
+              clipBehavior: Clip.none, // To ensure the CircleAvatar doesn't clip outside
+              children: [
+                // The actual FloatingActionButton
+                FloatingActionButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => NotificationScreen()),
+                    );
+                  },
+                  tooltip: 'Go to Notifications',
+                  child: const Icon(Icons.notifications),
+                ),
+
+                Positioned(
+                  right: 0, // Align the circle to the right of the button
+                  top: 0, // Align the circle to the top of the button
+                  child: CircleAvatar(
+                    radius: 10,
+                    backgroundColor: Colors.red,
+                      child: Text(
+                        '3',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
       ),
+
     );
   }
 }
