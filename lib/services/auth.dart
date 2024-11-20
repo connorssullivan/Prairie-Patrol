@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../app_view.dart';
 import '../screens/home/views/login_page.dart';
 
 class Auth {
@@ -35,7 +36,7 @@ class Auth {
     await _firebaseAuth.signOut();
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => LoginPage(onLogin: () {})),
+      MaterialPageRoute(builder: (context) => MyAppView()),
           (route) => false, // Removes all routes until the login page
     );
   }
