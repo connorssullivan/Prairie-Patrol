@@ -164,7 +164,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
               tooltip: 'Go to Notifications',
-              child: const Icon(Icons.notifications),
+              child: Stack(
+                children: [
+                  const Icon(Icons.notifications),
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: CircleAvatar(
+                      radius: 10,
+                      backgroundColor: Colors.red,
+                      child: Text(
+                        '3',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ],
