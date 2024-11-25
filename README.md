@@ -16,7 +16,7 @@ This project is built to assist zookeepers or wildlife researchers with precisio
 - **Customizable Settings**: Easily configure the app for your environment.
 
 <br />
-<div>![ex2.jpeg](../../Downloads/ex2.jpeg)
+<div>
   &emsp;&emsp;&emsp;
   <img src="ex1.jpeg" alt="Light Theme" width="330">
   &emsp;&emsp;&emsp;&emsp;
