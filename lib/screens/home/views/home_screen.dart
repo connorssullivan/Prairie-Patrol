@@ -147,7 +147,8 @@ class _HomeScreenState extends State<HomeScreen> {
             child: FloatingActionButton(
               onPressed: _trapRandomDog, // Call the function to trap a random dog
               tooltip: 'Trap Random Dog',
-              child: const Icon(Icons.pets), // Use an appropriate icon
+              child: const Icon(Icons.pets),
+              heroTag: 'trapRandomDog',
             ),
           ),
 
@@ -170,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: const Icon(Icons.notifications),
                 ),
 
-                Positioned(
+                const Positioned(
                   right: 0, // Align the circle to the right of the button
                   top: 0, // Align the circle to the top of the button
                   child: CircleAvatar(
