@@ -4,8 +4,8 @@
 
 */
 
-#define WIFI_SSID     "MyNet"
-#define WIFI_PASSWORD "woodford123"
+#define WIFI_SSID     "iPhone (234)"
+#define WIFI_PASSWORD "shadowshae"
 
 /*
 
@@ -47,7 +47,6 @@
 
 /* Test Mode (No Authentication) */
 #define REFERENCE_URL "https://prairiepatrol-default-rtdb.firebaseio.com/"
-
 
 /* Uncomment the following line for Locked Mode (With Authentication) */
 // #define AUTH_TOKEN "YOUR-AUTHENTICATION-CODE"

@@ -2,6 +2,11 @@
 #include <Firebase.h>
 #include <SPI.h>
 #include <MFRC522.h>
+#include <ArduinoBLE.h>
+
+BLEService setup("19B10000-E8F2-537E-4F6C-D104768A1214");
+BLEByteCharacteristic switchCharacteristic("19B10001-E8F2-537E-4F6C-D104768A1214", BLERead | BLEWrite);
+
 
 #define MAGNET_LOCK 5
 #define RST_PIN 9
@@ -27,10 +32,9 @@ void setup() {
   Serial.println("RFID Ready");
 
   pinMode(MAGNET_LOCK, OUTPUT);
-  digitalWrite(MAGNET_LOCK, LOW);
+  digitalWrite(MAGNET_LOCK, HIGH);
   Serial.println("Magnet OFF");
 
-  WiFi.disconnect();
   delay(500);
   Serial.println("Connecting to Network: ");
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -53,13 +57,14 @@ void loop() {
     }
     Serial.println("Active Trap");
     if(rfid.PICC_IsNewCardPresent()) {
+      Serial.println("test");
       if(rfid.PICC_ReadCardSerial())  {
         String scannedRFID = "";
         for(byte i = 0; i < rfid.uid.size; i++) {
           scannedRFID += String(rfid.uid.uidByte[i], HEX);
         }
         Serial.println("Scanned RFID Tag: "+scannedRFID);
-        if(scannedRFID.equalsIgnoreCase(selectedDogRFID)) {
+        if(selectedDogsRFID(scannedRFID)) {
           if(automatic) {
             digitalWrite(MAGNET_LOCK, LOW);
             Serial.println("Magnet OFF");
@@ -82,7 +87,7 @@ void loop() {
   {
     digitalWrite(MAGNET_LOCK, LOW);
   }
-  delay(2000);
+  delay(500);
 }
 
 void RFIDSetup(){
@@ -96,3 +101,34 @@ void printHex(byte *buffer, byte bufferSize) {
         Serial.print(buffer[i], HEX);
     }
 }
+
+bool selectedDogsRFID(String scannedTag) {
+  String listRfid = fb.getString(getPath(JUDES_FOLDER, "selectedDog") + "/listRfid");
+
+  if (listRfid.length() > 0) {
+    Serial.println("Retrieved RFID list from Firebase: " + listRfid);
+
+    listRfid.replace("[", "");
+    listRfid.replace("]", "");
+    listRfid.replace("\"", "");
+
+    int startIndex = 0;
+    while (startIndex >= 0) {
+      int endIndex = listRfid.indexOf(',', startIndex);
+      String rfidTag = (endIndex == -1) ? listRfid.substring(startIndex) : listRfid.substring(startIndex, endIndex);
+
+      rfidTag.trim();
+      if (rfidTag.equalsIgnoreCase(scannedTag)) {
+        Serial.println("RFID match found!");
+        return true;
+      }
+      startIndex = (endIndex == -1) ? -1 : endIndex + 1;
+    }
+    Serial.println("No matching RFID found.");
+    return false;
+  } else {
+    Serial.println("Failed to get RFID list from Firebase or list is empty.");
+    return false;
+  }
+}
+
