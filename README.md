@@ -69,6 +69,21 @@ Or set configurations in your IDE (e.g., Android Studio or VSCode).
 
 ---
 
+## Hardware Configuration for the Cage Prototype with no Wifi
+** to start make sure the battery is connected 
+1. Download arduino onto your computer
+2. plug the arduino into your computer
+3. Hover over tools --> Board --> Board Manager --> install " Arduino uno R4 boards"
+4. Hover over sketch--> include library--> library manager --> install mfrc 22
+5. Open "testRfidNoWifi"
+6. Hover over Tools --> Port --> select port that the arduino is plugged into (usually the recommened port)
+7. Hover over Tools --> and click on serial monitor (this is where any text will pop up as the code runs, so keep the serial monitor visible)
+8. Go back to the arduino tab, and click the circle button with upload button with the arrow in it. This should be the second button in the top left hand corner. This button uploads the 
+code to the arduino.
+* When the code has successfully uploaded the serial monitor should tell you that the card is ready to be scanned, simply hold a HF RFID card to the scanner and the door should close when its the selected card held up to the scanner.
+* To reset the simulation just reupload the code
+
+Note: the process is the same for running any arduino program: simply plug the arduino into the computer, then wait for the code to upload!
 
 ### Key Components
 1. **RFID Scanner**: Detects the animal in the cage.
