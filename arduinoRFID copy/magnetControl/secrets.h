@@ -4,8 +4,8 @@
 
 */
 
-#define WIFI_SSID     "AlexNet"
-#define WIFI_PASSWORD "Luna#8900"
+#define WIFI_SSID     ""
+#define WIFI_PASSWORD ""
 
 /*
 
