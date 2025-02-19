@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class DogsService {
   //Reference to the Dogs Collection
   final CollectionReference dogsCollection = FirebaseFirestore.instance.collection('dogs');
+  final CollectionReference notificationCollection = FirebaseFirestore.instance.collection('notifications');
 
   Future<DocumentSnapshot?> checkDogsInTrap() async {
     try {
@@ -31,6 +32,20 @@ class DogsService {
     }
   }
 
+  /// Method to create a notification
+  Future<void> createNotification(String title, String message) async {
+    try {
+      await notificationCollection.add({
+        'title': title,
+        'message': message,
+        'timestamp': FieldValue.serverTimestamp(), // Auto-generate timestamp
+      });
+      print('Notification created: $title - $message');
+    } catch (e) {
+      print('Error creating notification: $e');
+    }
+  }
+
   // Put dog in trap
   Future<void> trapRandomDog() async {
     try {
@@ -50,6 +65,8 @@ class DogsService {
 
       // Update the selected dog's inTrap status
       await dogsCollection.doc(selectedDog.id).update({'inTrap': true});
+      await createNotification('Dog Trapped', '${selectedDog['name']} has been trapped successfully!');
+      print('Notification should have been created.');
       print('${selectedDog['name']} has been trapped successfully!');
     } catch (e) {
       print('Error trapping dog: $e');

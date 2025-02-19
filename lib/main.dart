@@ -1,8 +1,10 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
 
 import 'app.dart';
+import 'firebase_config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,13 +16,13 @@ void main() async {
   if (Firebase.apps.isEmpty) {
     print('Firebase Initalizing');
     await Firebase.initializeApp(
-        options: FirebaseOptions(
-          apiKey: 'AIzaSyCGh-3Xkhn-VY3nRxxLHfBypwOvlMZp5zA',
-          appId: '1:731242768427:android:f3ba289b78e4679fdca26e',
-          messagingSenderId: '383665209766',
-          projectId: 'prairiepatrol',
-          storageBucket: 'prairiepatrol.appspot.com',
-        )
+      options: FirebaseOptions(
+        apiKey: FirebaseConfig.config['apiKey']!,
+        appId: FirebaseConfig.config['appId']!,
+        messagingSenderId: FirebaseConfig.config['messagingSenderId']!,
+        projectId: FirebaseConfig.config['projectId']!,
+        storageBucket: FirebaseConfig.config['storageBucket']!,
+      ),
     );
   }else{
     print('Firebase already Initalized');
@@ -32,7 +34,16 @@ void main() async {
       print('Error initializing Firebase: $e');
     }
   }
+
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
   runApp(const MyApp());
+}
+
+
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Handle background messages
+  print('Handling a background message: ${message.messageId}');
 }
 
 

@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:prairiepatrol/screens/home/views/login_page.dart'; // Import the LoginPage
 import 'package:prairiepatrol/screens/home/views/splash_screen.dart';
@@ -25,6 +26,7 @@ class _MyAppViewState extends State<MyAppView> {
       setState(() {
         _showSplashScreen = false; // Hide splash screen after 5 seconds
       });
+      requestPermission();
       _checkLoginStatus();
     });
   }
@@ -64,4 +66,44 @@ class _MyAppViewState extends State<MyAppView> {
           : LoginPage(onLogin: _login), // Login page when not logged in
     );
   }
+
+  Future<void> requestPermission() async {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+    // Request notification permissions
+    NotificationSettings settings = await messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+      print('User granted permission');
+    } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
+      print('User granted provisional permission');
+    } else {
+      print('User declined or has not granted permission');
+      return;
+    }
+
+    // Attempt to retrieve APNs token
+    try {
+      String? apnsToken = await messaging.getAPNSToken();
+      print('APNs Token: $apnsToken');
+      if (apnsToken == null) {
+        print('APNs token is still null.');
+      }
+    } catch (e) {
+      print('Error retrieving APNs Token: $e');
+    }
+
+    // Retrieve FCM token
+    try {
+      String? fcmToken = await messaging.getToken();
+      print('FCM Token: $fcmToken');
+    } catch (e) {
+      print('Error retrieving FCM Token: $e');
+    }
+  }
+
 }

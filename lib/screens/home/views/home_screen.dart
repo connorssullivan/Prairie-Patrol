@@ -13,6 +13,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   RTDogsService dogsService = RTDogsService();
   Map<String, dynamic>? trappedDog;
+  int? notificationCount;
   Timer? _timer;
 
   String _selectedDog = 'None';
@@ -23,6 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _checkForTrappedDogs(); // Initial check for trapped dogs
     _startPeriodicCheck();  // Start periodic check
+    _checkForNotifications();
   }
 
   @override
@@ -35,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _startPeriodicCheck() {
     _timer = Timer.periodic(Duration(seconds: 5), (timer) {
       _checkForTrappedDogs(); // Check every 5 seconds
+      _checkForNotifications();
     });
   }
 
@@ -45,6 +48,15 @@ class _HomeScreenState extends State<HomeScreen> {
       trappedDog = dogInTrap;
     });
   }
+
+  // Function to check for notifications
+  void _checkForNotifications() async {
+    int? count = await dogsService.checkNotificationCount();
+    setState(() {
+      notificationCount = count;
+    });
+  }
+
 
   // Function to release the trapped dog
   void _releaseDog() async {
@@ -171,14 +183,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: const Icon(Icons.notifications),
                 ),
 
-                const Positioned(
+                Positioned(
                   right: 0, // Align the circle to the right of the button
                   top: 0, // Align the circle to the top of the button
                   child: CircleAvatar(
                     radius: 10,
                     backgroundColor: Colors.red,
                       child: Text(
-                        '3',
+                        notificationCount.toString(),
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 12,

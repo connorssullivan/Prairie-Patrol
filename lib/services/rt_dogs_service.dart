@@ -31,6 +31,37 @@ class RTDogsService {
     }
   }
 
+  Future<int?> checkNotificationCount() async {
+    try {
+      DataSnapshot ds = await dbRef.child('notifications').get();
+      // Loop through the notifications and return the size
+      if( ds.exists && ds.value != null) {
+        Map <dynamic, dynamic> notifications = ds.value as Map<dynamic,
+            dynamic>;
+        int count = notifications.length;
+        return count;
+      }else{
+        return 0;
+      }
+    }catch (e){
+      //print('Error checking notifications: $e');
+      return 0;
+    }
+  }
+
+  Future<Object?> getNotifications() async {
+    try {
+      DataSnapshot ds = await dbRef.child('notifications').get();
+      if (ds.exists && ds.value != null) {
+        return ds.value;
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print('Error fetching notifications: $e');
+      return null;
+    }
+  }
   // Function to trap a random dog
   Future<void> trapRandomDog() async {
     try {
@@ -51,6 +82,7 @@ class RTDogsService {
 
         // Update the selected dog's inTrap status
         await dbRef.child('dogs/$randomDogKey').update({'inTrap': true});
+        await createNotification('Dog Trapped', '${dogsData[randomDogKey]['name']} has been trapped successfully!');
         print('${dogsData[randomDogKey]['name']} has been trapped successfully!');
       }
     } catch (e) {
@@ -152,6 +184,24 @@ class RTDogsService {
     } catch (e) {
       print('Error fetching dog RFID: $e');
       return null;  // Return null in case of an error
+    }
+  }
+
+  Future<void> createNotification(String title, String message) async {
+    try {
+      // Reference to the notifications node
+      DatabaseReference notificationRef = dbRef.child('notifications').push();
+
+      // Write notification data
+      await notificationRef.set({
+        'title': title,
+        'message': message,
+        'timestamp': ServerValue.timestamp,
+      });
+
+      print('✅ Notification created: $title - $message');
+    } catch (e) {
+      print('❌ Error creating notification: $e');
     }
   }
 
