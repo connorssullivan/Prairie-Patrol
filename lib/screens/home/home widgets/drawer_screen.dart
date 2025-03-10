@@ -1,70 +1,85 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../../../services/auth.dart'; // Import your login page
+import '../../../app.dart';
+import '../../../services/auth.dart';
+import '../views/settings_page.dart'; // Import your login page
 
 class DrawerScreen extends StatefulWidget {
+  final Function(AppThemeMode) toggleTheme; // ✅ Use `AppThemeMode`
+  final VoidCallback closeDrawer;
+
+  const DrawerScreen({super.key, required this.toggleTheme, required this.closeDrawer});
+
   @override
   _DrawerScreenState createState() => _DrawerScreenState();
 }
 
 class _DrawerScreenState extends State<DrawerScreen> {
-  final Auth _auth = Auth(); // Create an instance of Auth
+  final Auth _auth = Auth();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.blueGrey,
-      child: Padding(
-        padding: const EdgeInsets.only(top: 50, left: 40, bottom: 70),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                CircleAvatar(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Image(
-                      fit: BoxFit.cover,
-                      image: AssetImage('assets/images/fox.png'),
+    return GestureDetector(
+      onTap: widget.closeDrawer,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        color: Colors.blueGrey,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 50, left: 40, bottom: 70),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  CircleAvatar(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Image(
+                        fit: BoxFit.cover,
+                        image: AssetImage('assets/images/fox.png'),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                const Text(
-                  'Admin',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            const SizedBox(height: 30), // Space between profile and menu
+                  const SizedBox(width: 10),
+                  const Text(
+                    'Admin',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 30),
 
-            // Menu Items Section
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                NewRow(
-                  text: 'Settings',
-                  icon: Icons.settings,
-                  onTap: () {
-                    // Navigate to settings if needed
-                  },
-                ),
-                const SizedBox(height: 20),
-                NewRow(
-                  icon: Icons.logout,
-                  text: 'Logout',
-                  onTap: () {
-                    _auth.signOutAndNavigateToLogin(context); // Sign out and navigate to login
-                  },
-                ),
-              ],
-            ),
-          ],
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  NewRow(
+                    text: 'Settings',
+                    icon: Icons.settings,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SettingsPage(toggleTheme: widget.toggleTheme),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  NewRow(
+                    icon: Icons.logout,
+                    text: 'Logout',
+                    onTap: () {
+                      _auth.signOutAndNavigateToLogin(context, widget.toggleTheme);
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

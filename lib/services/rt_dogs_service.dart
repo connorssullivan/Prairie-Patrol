@@ -80,6 +80,21 @@ class RTDogsService {
         Random random = Random();
         String randomDogKey = dogKeys[random.nextInt(dogKeys.length)];
 
+        // Get current year and month
+        DateTime now = DateTime.now();
+        String year = now.year.toString();
+        String month = now.month.toString();
+
+        // Reference for trapping count
+        DatabaseReference trapCountRef = dbRef.child('trapCounts/$year/$month/$randomDogKey');
+
+        // Get the current count, initialize if not present
+        DataSnapshot trapSnapshot = await trapCountRef.get();
+        int trapCount = trapSnapshot.exists ? trapSnapshot.value as int : 0;
+
+        // Increment the count
+        await trapCountRef.set(trapCount + 1);
+
         // Update the selected dog's inTrap status
         await dbRef.child('dogs/$randomDogKey').update({'inTrap': true});
         await createNotification('Dog Trapped', '${dogsData[randomDogKey]['name']} has been trapped successfully!');
