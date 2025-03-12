@@ -222,4 +222,17 @@ class RTDogsService {
       print('Error deleting all notifications: $e');
     }
   }
+
+  Future<int?> getBatteryLife() async {
+    try {
+      DataSnapshot snapshot = await dbRef.child('Config/BatteryLife').get();
+      if (snapshot.exists && snapshot.value != null) {
+        return snapshot.value as int?; // Return battery life as an integer (percentage)
+      }
+      return null; // Return null if no battery data exists
+    } catch (e) {
+      print('Error fetching battery life: $e');
+      return null; // Return null in case of an error
+    }
+  }
 }
