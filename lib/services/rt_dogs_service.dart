@@ -205,4 +205,21 @@ class RTDogsService {
     }
   }
 
+  Future<void> deleteNotification(String id) async {
+    try {
+      await dbRef.child('notifications/$id').remove();  // Remove the notification from Firebase
+      print('Notification with ID $id deleted.');
+    } catch (e) {
+      print('Error deleting notification: $e');
+    }
+  }
+
+  Future<void> deleteAllNotifications() async {
+    try {
+      await dbRef.child('notifications').remove();  // Remove all notifications from Firebase
+      print('All notifications deleted.');
+    } catch (e) {
+      print('Error deleting all notifications: $e');
+    }
+  }
 }
