@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:prairiepatrol/screens/home/home%20widgets/drawer_screen.dart';
 import 'package:prairiepatrol/screens/home/views/home_screen.dart';
 import 'package:prairiepatrol/screens/home/views/stats_screen.dart';
-import 'package:prairiepatrol/screens/home/views/login_page.dart';
 import 'package:prairiepatrol/screens/home/views/test_page.dart';
-
+import '../../../services/rt_dogs_service.dart';
 import 'app.dart';
 
 class Skeleton extends StatefulWidget {
@@ -22,12 +21,30 @@ class _SkeletonState extends State<Skeleton> {
   bool _isDrawerOpen = false;
   double xOffSet = 0;
   double yOffset = 0;
+  int? _batteryLife;
 
   final List<Widget> _pages = [
     const HomeScreen(),
     const StatsScreen(),
     const TestPage(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _subscribeToBatteryLife(); // Subscribe to battery life updates
+  }
+
+  void _subscribeToBatteryLife() {
+    // Listen for changes in battery life
+    RTDogsService().dbRef.child('Config/BatteryLife').onValue.listen((event) {
+      if (event.snapshot.exists && event.snapshot.value != null) {
+        setState(() {
+          _batteryLife = event.snapshot.value as int?;
+        });
+      }
+    });
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -47,6 +64,17 @@ class _SkeletonState extends State<Skeleton> {
       }
       _isDrawerOpen = !_isDrawerOpen;
     });
+  }
+
+  // Helper function to determine battery icon color
+  Color _getBatteryIconColor(int batteryPercentage) {
+    if (batteryPercentage > 79) {
+      return Colors.green; // Full battery
+    } else if (batteryPercentage > 29) {
+      return Colors.yellow; // Medium battery
+    } else {
+      return Colors.red; // Low battery
+    }
   }
 
   @override
@@ -82,7 +110,30 @@ class _SkeletonState extends State<Skeleton> {
                       style: TextStyle(color: Colors.green),
                     ),
                   ),
-                  actions: [const SizedBox(width: 48)],
+                  actions: [
+                    // Battery life icon in the upper right
+                    if (_batteryLife != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.battery_full,
+                              color: _getBatteryIconColor(_batteryLife!), // Dynamic color based on battery percentage
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              '$_batteryLife%',
+                              style: TextStyle(
+                                color: _getBatteryIconColor(_batteryLife!), // Match text color to icon color
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(width: 48),
+                  ],
                 ),
                 body: _pages[_selectedPage],
                 bottomNavigationBar: BottomNavigationBar(
@@ -112,5 +163,3 @@ class _SkeletonState extends State<Skeleton> {
     );
   }
 }
-
-
