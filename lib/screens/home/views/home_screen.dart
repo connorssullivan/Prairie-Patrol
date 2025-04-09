@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:firebase_database/firebase_database.dart';
 import '../../../services/rt_dogs_service.dart';
 import 'notif_screen.dart';
 
@@ -15,33 +16,53 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic>? trappedDog;
   int? notificationCount;
   Timer? _timer;
-
-  String _selectedDog = 'None';
-  final List<String> _dogOptions = ['None', 'Red', 'Green'];
+  List<String> selectedDogs = [];
+  List<Map<String, dynamic>> allDogs = [];
 
   @override
   void initState() {
     super.initState();
-    _checkForTrappedDogs(); // Initial check for trapped dogs
-    _startPeriodicCheck();  // Start periodic check
+    _checkForTrappedDogs();
+    _startPeriodicCheck();
     _checkForNotifications();
+    _loadAllDogs();
   }
 
   @override
   void dispose() {
-    _timer?.cancel(); // Cancel the timer when the widget is disposed
+    _timer?.cancel();
     super.dispose();
   }
 
-  // Function to start a periodic check for dogs in the trap
+  Future<void> _loadAllDogs() async {
+    try {
+      DataSnapshot snapshot = await dogsService.dbRef.child('dogs').get();
+      if (snapshot.exists) {
+        final dogsData = Map<String, dynamic>.from(snapshot.value as Map);
+        setState(() {
+          allDogs = dogsData.entries.map((entry) {
+            return {
+              'id': entry.key,
+              'name': entry.value['name'],
+              'rfid': entry.value['rfid'],
+              'inTrap': entry.value['inTrap'] ?? false,
+            };
+          }).toList();
+        });
+      }
+    } catch (e) {
+      print('Error loading dogs: $e');
+    }
+  }
+
   void _startPeriodicCheck() {
-    _timer = Timer.periodic(Duration(seconds: 5), (timer) {
-      _checkForTrappedDogs(); // Check every 5 seconds
+    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _checkForTrappedDogs();
       _checkForNotifications();
+      _loadAllDogs();
     });
   }
 
-  // Function to check for dogs in the trap
   void _checkForTrappedDogs() async {
     Map<String, dynamic>? dogInTrap = await dogsService.checkDogsInTrap();
     setState(() {
@@ -49,7 +70,6 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  // Function to check for notifications
   void _checkForNotifications() async {
     int? count = await dogsService.checkNotificationCount();
     setState(() {
@@ -57,92 +77,111 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-
-  // Function to release the trapped dog
   void _releaseDog() async {
     if (trappedDog != null) {
       await dogsService.releaseDog(trappedDog!['name']);
       setState(() {
-        trappedDog = null; // Set to null after releasing the dog
+        trappedDog = null;
       });
     }
   }
 
-  // Function to trap a random dog
   void _trapRandomDog() async {
-    await dogsService.trapRandomDog(); // Call the function to trap a random dog
-    _checkForTrappedDogs(); // Check for trapped dogs after trapping
+    await dogsService.trapRandomDog();
+    _checkForTrappedDogs();
   }
 
-  // Function to select a dog from the dropdown
-  void _selectDog(String dog) async {
-    await dogsService.selectDog(dog);
-    print('Dog selected: $dog');
+  void _toggleDogSelection(String dogId) {
+    setState(() {
+      if (selectedDogs.contains(dogId)) {
+        selectedDogs.remove(dogId);
+      } else {
+        selectedDogs.add(dogId);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final buttonDistance = 100.0; // Distance between the floating action buttons and the center button
+    final buttonDistance = 100.0;
 
     return Scaffold(
       body: Container(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Center(
-              child: DropdownButton<String>(
-                value: _selectedDog, // Currently selected value
-                icon: const Icon(Icons.arrow_downward),
-                elevation: 16,
-                style: const TextStyle(color: Colors.blue),
-                underline: Container(
-                  height: 2,
-                  color: Colors.blueAccent,
-                ),
-                onChanged: (String? newValue) async {
-                  setState(() {
-                    _selectedDog = newValue!;
-                  });
-                  _selectDog(_selectedDog); // Call the function when a dog is selected
-                },
-                items: _dogOptions.map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Target Dogs:',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8.0,
+                    runSpacing: 8.0,
+                    children: allDogs.map((dog) {
+                      final isSelected = selectedDogs.contains(dog['id']);
+                      final isInTrap = dog['inTrap'] == true;
+                      
+                      return GestureDetector(
+                        onTap: () => _toggleDogSelection(dog['id']),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelected ? Colors.blue : Colors.grey[200],
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isInTrap ? Colors.green : Colors.red,
+                              width: 2,
+                            ),
+                          ),
+                          child: Text(
+                            dog['name'],
+                            style: TextStyle(
+                              color: isSelected ? Colors.white : Colors.black,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 50),
-
-            // Display the trapped dog or a dash if none is trapped
             Center(
               child: trappedDog != null
                   ? Image.asset(
-                trappedDog!['name'] == 'Red'
-                    ? 'assets/images/red_dog.png'
-                    : 'assets/images/yellow_dog.png',
-                width: 200, // Adjust the size as needed
-                height: 200,
-                fit: BoxFit.contain,
-              )
+                      'assets/images/${(trappedDog!['name']?.toLowerCase() == 'red' ? 'red' : 'yellow')}_dog.png',
+                      width: 200,
+                      height: 200,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(
+                          Icons.pets,
+                          size: 100,
+                          color: Colors.grey,
+                        );
+                      },
+                    )
                   : const Text(
-                '-',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
+                      '-',
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
             ),
-
             const SizedBox(height: 200),
             ElevatedButton(
-              onPressed: trappedDog != null
-                  ? () {
-                _releaseDog(); // Call the release dog function
-              }
-                  : null, // Disable button if no dog is trapped
+              onPressed: trappedDog != null ? _releaseDog : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                trappedDog != null ? Colors.red : Colors.grey, // Red if dog is trapped, grey if not
+                backgroundColor: trappedDog != null ? Colors.red : Colors.grey,
                 minimumSize: const Size(200, 60),
               ),
               child: const Text('Release'),
@@ -152,26 +191,22 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: Stack(
         children: [
-          // Positioned FloatingActionButton for "Trap Random Dog"
           Positioned(
-            left: screenWidth / 2 - buttonDistance, // Position this button on the left
-            bottom: 150, // Align to the same level as the "Release" button
+            left: screenWidth / 2 - buttonDistance,
+            bottom: 150,
             child: FloatingActionButton(
-              onPressed: _trapRandomDog, // Call the function to trap a random dog
+              onPressed: _trapRandomDog,
               tooltip: 'Trap Random Dog',
               child: const Icon(Icons.pets),
               heroTag: 'trapRandomDog',
             ),
           ),
-
-          // Positioned FloatingActionButton for "Go to Notifications"
           Positioned(
-            left: screenWidth / 2 + buttonDistance, // Position this button on the right
-            bottom: 150, // Align to the same level as the "Release" button
+            left: screenWidth / 2 + buttonDistance,
+            bottom: 150,
             child: Stack(
-              clipBehavior: Clip.none, // To ensure the CircleAvatar doesn't clip outside
+              clipBehavior: Clip.none,
               children: [
-                // The actual FloatingActionButton
                 FloatingActionButton(
                   onPressed: () {
                     Navigator.push(
@@ -182,16 +217,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   tooltip: 'Go to Notifications',
                   child: const Icon(Icons.notifications),
                 ),
-
-                Positioned(
-                  right: 0, // Align the circle to the right of the button
-                  top: 0, // Align the circle to the top of the button
-                  child: CircleAvatar(
-                    radius: 10,
-                    backgroundColor: Colors.red,
+                if (notificationCount != null && notificationCount! > 0)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: CircleAvatar(
+                      radius: 10,
+                      backgroundColor: Colors.red,
                       child: Text(
                         notificationCount.toString(),
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 12,
                         ),
@@ -203,146 +238,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-
     );
   }
 }
-
-
-/*
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
-
-  @override
-  _HomeScreenState createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  DogsService dogsService = DogsService();
-  DocumentSnapshot? trappedDog;
-  Timer? _timer;
-
-  String _selectedDog = 'None';
-
-  final List<String> _dogOptions = ['None', 'Red Dog', 'Yellow Dog'];
-
-  @override
-  void initState() {
-    super.initState();
-    _checkForTrappedDogs(); // Initial check for trapped dogs
-    _startPeriodicCheck();  // Start periodic check
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel(); // Cancel the timer when the widget is disposed
-    super.dispose();
-  }
-
-  // Function to start a periodic check for dogs in the trap
-  void _startPeriodicCheck() {
-    _timer = Timer.periodic(Duration(seconds: 5), (timer) {
-      _checkForTrappedDogs(); // Check every 5 seconds
-    });
-  }
-
-  // Function to check for dogs in the trap
-  void _checkForTrappedDogs() async {
-    DocumentSnapshot? dogInTrap = await dogsService.checkDogsInTrap();
-    setState(() {
-      trappedDog = dogInTrap;
-    });
-  }
-
-  // Function to release the trapped dog
-  void _releaseDog() async {
-    if (trappedDog != null) {
-      await dogsService.releaseDog(trappedDog!.id);
-      setState(() {
-        trappedDog = null; // Set to null after releasing the dog
-      });
-    }
-  }
-
-  // Function to trap a random dog
-  void _trapRandomDog() async {
-    await dogsService.trapRandomDog(); // Call the function to trap a random dog
-    _checkForTrappedDogs(); // Check for trapped dogs after trapping
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    return Scaffold(
-      body: Container(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Center(
-              child: DropdownButton<String>(
-                value: _selectedDog, // Currently selected value
-                icon: const Icon(Icons.arrow_downward),
-                elevation: 16,
-                style: const TextStyle(color: Colors.blue),
-                underline: Container(
-                  height: 2,
-                  color: Colors.blueAccent,
-                ),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _selectedDog = newValue!;
-                  });
-                },
-                items: _dogOptions.map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-            ),
-            const SizedBox(height: 50),
-
-            // Display the trapped dog or a dash if none is trapped
-            Center(
-              child: trappedDog != null
-                  ? Image.asset(
-                trappedDog!['color'] == 'red'
-                    ? 'assets/images/red_dog.png'
-                    : 'assets/images/yellow_dog.png',
-                width: 200, // Adjust the size as needed
-                height: 200,
-                fit: BoxFit.contain,
-              )
-                  : const Text(
-                '-',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-            ),
-
-            const SizedBox(height: 200),
-            ElevatedButton(
-              onPressed: trappedDog != null
-                  ? () {
-                _releaseDog(); // Call the release dog function
-              }
-                  : null, // Disable button if no dog is trapped
-              style: ElevatedButton.styleFrom(
-                backgroundColor: trappedDog != null ? Colors.red : Colors.grey, // Red if dog is trapped, grey if not
-                minimumSize: const Size(200, 60),
-              ),
-              child: const Text('Release'),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _trapRandomDog, // Call the function to trap a random dog
-        tooltip: 'Trap Random Dog',
-        child: const Icon(Icons.pets), // Use an appropriate icon
-      ),
-    );
-  }
-}
-*/

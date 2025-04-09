@@ -106,7 +106,7 @@ class _SkeletonState extends State<Skeleton> {
                   ),
                   title: const Center(
                     child: Text(
-                      'Pari Patrol',
+                      'Prairie Patrol',
                       style: TextStyle(color: Colors.green),
                     ),
                   ),

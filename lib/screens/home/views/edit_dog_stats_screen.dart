@@ -14,6 +14,7 @@ class EditDogStatsScreen extends StatefulWidget {
 class _EditDogStatsScreenState extends State<EditDogStatsScreen> {
   final _formKey = GlobalKey<FormState>();
   String? name;
+  String? rfid;
   DateTime? lastCheckup;
   DateTime? lastCaught;
   String? healthStatus;
@@ -31,10 +32,11 @@ class _EditDogStatsScreenState extends State<EditDogStatsScreen> {
     var dogStats = await RTDogsService().getDogStatsById(widget.dogId);
     setState(() {
       name = dogStats?['name'];
+      rfid = dogStats?['rfid'];
       lastCheckup = dogStats?['lastCheckup'] != null ? DateTime.parse(dogStats!['lastCheckup']) : null;
       lastCaught = dogStats?['lastCaught'] != null ? DateTime.parse(dogStats!['lastCaught']) : null;
       healthStatus = dogStats?['healthStatus'];
-      age = dogStats?['age'];
+      age = dogStats?['age']?.toString();
     });
   }
 
@@ -52,19 +54,18 @@ class _EditDogStatsScreenState extends State<EditDogStatsScreen> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
-      // Create a map to hold only the fields that are not null or empty
       Map<String, dynamic> updatedFields = {};
 
       if (name != null && name!.isNotEmpty) updatedFields['name'] = name;
+      if (rfid != null && rfid!.isNotEmpty) updatedFields['rfid'] = rfid;
       if (lastCheckup != null) updatedFields['lastCheckup'] = lastCheckup!.toUtc().toIso8601String();
       if (lastCaught != null) updatedFields['lastCaught'] = lastCaught!.toUtc().toIso8601String();
       if (healthStatus != null && healthStatus!.isNotEmpty) updatedFields['healthStatus'] = healthStatus;
-      if (age != null && age!.isNotEmpty) updatedFields['age'] = age;
+      if (age != null && age!.isNotEmpty) updatedFields['age'] = int.tryParse(age!) ?? 0;
 
-      // Only call update if there are changes to make
       if (updatedFields.isNotEmpty) {
         await RTDogsService().updateDogStats(widget.dogId, updatedFields);
-        Navigator.pop(context, true); // Indicate that an update was made
+        Navigator.pop(context, true);
       }
     }
   }
@@ -72,21 +73,28 @@ class _EditDogStatsScreenState extends State<EditDogStatsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Edit Dog Stats')),
+      appBar: AppBar(title: const Text('Edit Dog Stats')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
-          child: Column(
+          child: ListView(
             children: [
               TextFormField(
                 initialValue: name,
-                decoration: InputDecoration(labelText: 'Name'),
+                decoration: const InputDecoration(labelText: 'Name'),
                 onSaved: (value) => name = value,
               ),
+              const SizedBox(height: 16),
+              TextFormField(
+                initialValue: rfid,
+                decoration: const InputDecoration(labelText: 'RFID'),
+                onSaved: (value) => rfid = value,
+              ),
+              const SizedBox(height: 16),
               TextFormField(
                 readOnly: true,
-                decoration: InputDecoration(labelText: 'Last Check-Up'),
+                decoration: const InputDecoration(labelText: 'Last Check-Up'),
                 controller: TextEditingController(
                   text: lastCheckup != null ? _dateFormat.format(lastCheckup!) : '',
                 ),
@@ -96,9 +104,10 @@ class _EditDogStatsScreenState extends State<EditDogStatsScreen> {
                   });
                 }),
               ),
+              const SizedBox(height: 16),
               TextFormField(
                 readOnly: true,
-                decoration: InputDecoration(labelText: 'Last Caught'),
+                decoration: const InputDecoration(labelText: 'Last Caught'),
                 controller: TextEditingController(
                   text: lastCaught != null ? _dateFormat.format(lastCaught!) : '',
                 ),
@@ -108,20 +117,23 @@ class _EditDogStatsScreenState extends State<EditDogStatsScreen> {
                   });
                 }),
               ),
+              const SizedBox(height: 16),
               TextFormField(
                 initialValue: healthStatus,
-                decoration: InputDecoration(labelText: 'Health Status'),
+                decoration: const InputDecoration(labelText: 'Health Status'),
                 onSaved: (value) => healthStatus = value,
               ),
+              const SizedBox(height: 16),
               TextFormField(
                 initialValue: age,
-                decoration: InputDecoration(labelText: 'Age'),
+                decoration: const InputDecoration(labelText: 'Age'),
+                keyboardType: TextInputType.number,
                 onSaved: (value) => age = value,
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _saveStats,
-                child: Text('Save Changes'),
+                child: const Text('Save Changes'),
               ),
             ],
           ),
