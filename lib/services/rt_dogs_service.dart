@@ -298,4 +298,68 @@ class RTDogsService {
     }
   }
 
+  Future<void> appendRfidToList(String rfid) async {
+    try {
+      final listRef = dbRef.child('selectedDog/listRfid');
+      final snapshot = await listRef.get();
+
+      int nextIndex = 0;
+
+      if (snapshot.exists && snapshot.value != null) {
+        if (snapshot.value is List) {
+          List list = snapshot.value as List;
+          // Skip over null holes
+          nextIndex = list.length;
+          for (int i = 0; i < list.length; i++) {
+            if (list[i] == null) {
+              nextIndex = i;
+              break;
+            }
+          }
+        } else if (snapshot.value is Map) {
+          Map map = snapshot.value as Map;
+          nextIndex = map.length;
+        }
+      }
+
+      await listRef.child(nextIndex.toString()).set(rfid);
+      print('✅ RFID "$rfid" added at index $nextIndex');
+    } catch (e) {
+      print('❌ Error in appendRfidToList: $e');
+    }
+  }
+
+
+  Future<void> removeRfidFromList(String rfid) async {
+    try {
+      final listRef = dbRef.child('selectedDog/listRfid');
+      final snapshot = await listRef.get();
+
+      if (snapshot.exists && snapshot.value != null) {
+        if (snapshot.value is List) {
+          List list = snapshot.value as List;
+          for (int i = 0; i < list.length; i++) {
+            if (list[i] == rfid) {
+              await listRef.child(i.toString()).remove();
+              print('🗑 Removed RFID "$rfid" from index $i');
+              return;
+            }
+          }
+        } else if (snapshot.value is Map) {
+          Map map = snapshot.value as Map;
+          for (var entry in map.entries) {
+            if (entry.value == rfid) {
+              await listRef.child(entry.key.toString()).remove();
+              print('🗑 Removed RFID "$rfid" from key ${entry.key}');
+              return;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('❌ Error in removeRfidFromList: $e');
+    }
+  }
+
+
 }

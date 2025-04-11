@@ -91,15 +91,23 @@ class _HomeScreenState extends State<HomeScreen> {
     _checkForTrappedDogs();
   }
 
-  void _toggleDogSelection(String dogId) {
+  void _toggleDogSelection(String dogId) async {
+    final dog = allDogs.firstWhere((d) => d['id'] == dogId, orElse: () => {});
+    final rfid = dog['rfid'];
+
+    if (rfid == null) return;
+
     setState(() {
       if (selectedDogs.contains(dogId)) {
         selectedDogs.remove(dogId);
+        dogsService.removeRfidFromList(rfid); // 🗑 Remove
       } else {
         selectedDogs.add(dogId);
+        dogsService.appendRfidToList(rfid);   // ➕ Add
       }
     });
   }
+
 
   @override
   Widget build(BuildContext context) {

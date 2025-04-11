@@ -1,124 +1,139 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-  -->
   <base href="/">
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="Prairie Patrol - Monitor and manage your prairie dog traps.">
-
+  
   <!-- Safari-specific meta tags -->
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Prairie Patrol">
   <meta name="format-detection" content="telephone=no">
   <meta name="apple-touch-fullscreen" content="yes">
   <meta name="apple-mobile-web-app-orientations" content="portrait">
-
+  
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
-
+  
   <title>Prairie Patrol</title>
   <link rel="manifest" href="manifest.json">
 
-  <!-- Firebase SDK -->
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
 
+  <!-- Flutter Loader -->
   <script>
-    // The value below is injected by flutter build, do not touch.
     const serviceWorkerVersion = null;
   </script>
-  <!-- This script adds the flutter initialization JS code -->
   <script src="flutter.js" defer></script>
 </head>
+
 <body>
   <script>
-    // Disable service workers globally
     window.skipServiceWorker = true;
 
-    // Initialize Firebase with retries
-    let firebaseInitAttempts = 0;
-    const maxFirebaseAttempts = 5;
     const firebaseConfig = {
       apiKey: "AIzaSyC9cgUKU4qYMaC86MGTTRIr2Hw1lpqhU1Y",
       authDomain: "prairiepatrol.firebaseapp.com",
       databaseURL: "https://prairiepatrol-default-rtdb.firebaseio.com",
       projectId: "prairiepatrol",
-      storageBucket: "prairiepatrol.firebasestorage.app",
+      storageBucket: "prairiepatrol.appspot.com",
       messagingSenderId: "731242768427",
       appId: "1:731242768427:web:e889405409dda52edca26e",
       measurementId: "G-F01VBL8JS0"
     };
 
-    function initFirebase() {
-      console.log(`Attempting to initialize Firebase (attempt ${firebaseInitAttempts + 1}/${maxFirebaseAttempts})`);
-      
+    let firebaseInitialized = false;
+    let initializationAttempts = 0;
+    const maxAttempts = 5;
+
+    function initializeFirebase() {
+      console.log('🔄 Starting Firebase initialization attempt', initializationAttempts + 1);
+
+      if (firebaseInitialized) {
+        console.log('✅ Firebase already initialized');
+        localStorage.setItem('firebaseInitialized', 'true');
+        return;
+      }
+
       try {
         if (typeof firebase === 'undefined') {
-          throw new Error('Firebase SDK not loaded');
+          console.log('⚠️ Firebase SDK not loaded yet, retrying...');
+          if (initializationAttempts < maxAttempts) {
+            initializationAttempts++;
+            const delay = 1000 * initializationAttempts;
+            setTimeout(initializeFirebase, delay);
+          } else {
+            console.error('❌ Failed to load Firebase SDK after', maxAttempts, 'attempts');
+            localStorage.setItem('firebaseError', 'Failed to load Firebase SDK');
+          }
+          return;
         }
 
-        if (!firebase.apps.length) {
-          firebase.initializeApp(firebaseConfig);
-          console.log('Firebase initialized successfully');
-          localStorage.setItem('firebaseInitialized', 'true');
-          return true;
-        } else {
-          console.log('Firebase already initialized');
-          localStorage.setItem('firebaseInitialized', 'true');
-          return true;
-        }
+        console.log('📦 Firebase SDK found, initializing app...');
+        firebase.initializeApp(firebaseConfig);
+        firebaseInitialized = true;
+        localStorage.setItem('firebaseInitialized', 'true');
+        console.log('✅ Firebase initialized successfully');
       } catch (error) {
-        console.error('Firebase initialization error:', error);
+        console.error('❌ Error initializing Firebase:', error);
         localStorage.setItem('firebaseError', error.toString());
-        
-        if (firebaseInitAttempts < maxFirebaseAttempts - 1) {
-          firebaseInitAttempts++;
-          console.log(`Retrying in ${firebaseInitAttempts * 1000}ms...`);
-          setTimeout(initFirebase, firebaseInitAttempts * 1000);
-          return false;
-        } else {
-          console.error('Max Firebase initialization attempts reached');
-          return false;
+        if (initializationAttempts < maxAttempts) {
+          initializationAttempts++;
+          const delay = 1000 * initializationAttempts;
+          setTimeout(initializeFirebase, delay);
         }
       }
     }
 
-    window.addEventListener('load', function(ev) {
-      // Clear any previous Firebase state
+    // Check if Safari
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    console.log('🌐 Browser detection:', isSafari ? 'Safari' : 'Other browser');
+
+    window.addEventListener('load', function () {
+      // Clear previous Firebase state
       localStorage.removeItem('firebaseInitialized');
       localStorage.removeItem('firebaseError');
 
-      // Initialize Flutter
-      _flutter.loader.loadEntrypoint({
-        serviceWorker: {
-          serviceWorkerVersion: serviceWorkerVersion,
-        },
-        onEntrypointLoaded: function(engineInitializer) {
-          // Initialize Firebase before Flutter
-          initFirebase();
-          
-          engineInitializer.initializeEngine().then(function(appRunner) {
-            appRunner.runApp();
+      if (isSafari) {
+        console.log('🧹 Clearing cache & localStorage for Safari...');
+        if (window.caches) {
+          caches.keys().then(function(names) {
+            for (let name of names) {
+              caches.delete(name);
+            }
           });
         }
-      });
+        localStorage.clear();
+
+        console.log('⏳ Waiting 2000ms before initializing Firebase in Safari...');
+        setTimeout(() => {
+          initializeFirebase();
+          _flutter.loader.loadEntrypoint({
+            serviceWorker: { serviceWorkerVersion },
+            onEntrypointLoaded: function(engineInitializer) {
+              engineInitializer.initializeEngine().then(appRunner => appRunner.runApp());
+            }
+          });
+        }, 2000);
+      } else {
+        console.log('🚀 Initializing Firebase immediately for non-Safari browser');
+        initializeFirebase();
+        _flutter.loader.loadEntrypoint({
+          serviceWorker: { serviceWorkerVersion },
+          onEntrypointLoaded: function(engineInitializer) {
+            engineInitializer.initializeEngine().then(appRunner => appRunner.runApp());
+          }
+        });
+      }
     });
   </script>
 </body>
