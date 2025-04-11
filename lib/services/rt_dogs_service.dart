@@ -108,8 +108,26 @@ class RTDogsService {
   // Function to release the dog from the trap
   Future<void> releaseDog(String dogName) async {
     try {
-      await dbRef.child('dogs/${dogName}Dog').update({'inTrap': false});
-      print('$dogName released successfully!');
+      // First find the dog by name
+      DataSnapshot snapshot = await dbRef.child('dogs').get();
+      if (snapshot.exists) {
+        final dogsData = Map<String, dynamic>.from(snapshot.value as Map);
+        String? dogId;
+        
+        // Find the dog ID by name
+        dogsData.forEach((key, value) {
+          if (value['name'] == dogName) {
+            dogId = key;
+          }
+        });
+
+        if (dogId != null) {
+          await dbRef.child('dogs/$dogId').update({'inTrap': false});
+          print('$dogName released successfully!');
+        } else {
+          print('Dog with name $dogName not found');
+        }
+      }
     } catch (e) {
       print('Error releasing dog: $e');
     }
@@ -248,6 +266,35 @@ class RTDogsService {
     } catch (e) {
       print('Error fetching battery life: $e');
       return null; // Return null in case of an error
+    }
+  }
+
+  Future<void> addNewDog(String rfid, String name, int age) async {
+    try {
+      // Create a new dog entry in the database
+      await dbRef.child('dogs').push().set({
+        'rfid': rfid,
+        'name': name,
+        'age': age,
+        'inTrap': false,
+        'lastCheckup': '',
+        'lastCaught': '',
+        'healthStatus': '',
+      });
+      print('New dog added successfully with RFID: $rfid');
+    } catch (e) {
+      print('Error adding new dog: $e');
+      throw e;
+    }
+  }
+
+  Future<void> deleteDog(String dogId) async {
+    try {
+      await dbRef.child('dogs/$dogId').remove();
+      print('Dog with ID $dogId deleted successfully');
+    } catch (e) {
+      print('Error deleting dog: $e');
+      throw e;
     }
   }
 
