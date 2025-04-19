@@ -45,11 +45,33 @@ class _DogStatsBoxState extends State<DogStatsBox> {
   }
 
   String _getDogImage(String? name) {
-    if (name != null && name.toLowerCase() == 'red') {
-      return 'assets/images/red_dog.png';
-    } else {
-      return 'assets/images/yellow_dog.png';
+    return 'assets/images/base_dog.png';
+  }
+
+  Color _getDogColor(String? name, String? colorHex) {
+    if (colorHex != null && colorHex.isNotEmpty) {
+      try {
+        // Try to parse as hex color
+        if (colorHex.startsWith('0x')) {
+          return Color(int.parse(colorHex));
+        } else if (colorHex.startsWith('#')) {
+          return Color(int.parse(colorHex.replaceAll('#', '0x')));
+        }
+        // Try to parse as named color
+        switch (colorHex.toLowerCase()) {
+          case 'red':
+            return Colors.red;
+          case 'yellow':
+            return Colors.yellow;
+          default:
+            return Colors.yellow;
+        }
+      } catch (e) {
+        print('Error parsing color: $e');
+        return Colors.yellow;
+      }
     }
+    return Colors.yellow;
   }
 
   Future<void> _editDogStats(BuildContext context) async {
@@ -191,14 +213,17 @@ class _DogStatsBoxState extends State<DogStatsBox> {
                     children: [
                       Align(
                         alignment: Alignment.topLeft,
-                        child: Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            image: DecorationImage(
-                              image: AssetImage(imageUrl),
-                              fit: BoxFit.scaleDown,
+                        child: ClipOval(
+                          child: ColorFiltered(
+                            colorFilter: ColorFilter.mode(
+                              _getDogColor(dog['name'], dog['color']).withOpacity(1.0),
+                              BlendMode.modulate,
+                            ),
+                            child: Image.asset(
+                              imageUrl,
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.contain,
                             ),
                           ),
                         ),

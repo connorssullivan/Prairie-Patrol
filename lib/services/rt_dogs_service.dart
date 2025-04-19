@@ -1,5 +1,6 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'dart:math';
+import 'package:flutter/painting.dart';
 
 class RTDogsService {
   final DatabaseReference dbRef = FirebaseDatabase.instance.ref();
@@ -269,7 +270,7 @@ class RTDogsService {
     }
   }
 
-  Future<void> addNewDog(String rfid, String name, int age) async {
+  Future<void> addNewDog(String rfid, String name, int age, Color color) async {
     try {
       // Create a new dog entry in the database
       await dbRef.child('dogs').push().set({
@@ -280,6 +281,7 @@ class RTDogsService {
         'lastCheckup': '',
         'lastCaught': '',
         'healthStatus': '',
+        'color': '0x${color.value.toRadixString(16).padLeft(8, '0')}', // Store color as hex string with 0x prefix
       });
       print('New dog added successfully with RFID: $rfid');
     } catch (e) {

@@ -1,6 +1,7 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:intl/intl.dart';
 
 import '../../../services/rt_dogs_service.dart';
@@ -20,6 +21,7 @@ class _StatsScreenState extends State<StatsScreen> {
   final TextEditingController _ageController = TextEditingController();
   List<Map<String, dynamic>> _dogStats = [];
   bool _isLoading = false;
+  Color _selectedColor = Colors.yellow; // Default color
 
   Future<void> _loadDogStats() async {
     if (_isLoading) return;
@@ -64,6 +66,7 @@ class _StatsScreenState extends State<StatsScreen> {
         _rfidController.text,
         _nameController.text,
         age,
+        _selectedColor, // Pass the selected color
       );
       
       // Clear controllers
@@ -96,52 +99,120 @@ class _StatsScreenState extends State<StatsScreen> {
   }
 
   void _showAddDogDialog() {
+    Color selectedColor = _selectedColor;
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add New Dog'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _rfidController,
-              decoration: const InputDecoration(
-                labelText: 'RFID',
-                hintText: 'Enter RFID',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Add New Dog'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _rfidController,
+                decoration: const InputDecoration(
+                  labelText: 'RFID',
+                  hintText: 'Enter RFID',
+                ),
               ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  hintText: 'Enter dog name',
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _ageController,
+                decoration: const InputDecoration(
+                  labelText: 'Age',
+                  hintText: 'Enter dog age',
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Text('Color: '),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => StatefulBuilder(
+                          builder: (context, setPickerState) => AlertDialog(
+                            title: const Text('Pick a color'),
+                            content: SingleChildScrollView(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ColorPicker(
+                                    pickerColor: selectedColor,
+                                    onColorChanged: (color) {
+                                      setPickerState(() {
+                                        selectedColor = color;
+                                      });
+                                    },
+                                    pickerAreaHeightPercent: 0.8,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Container(
+                                    width: 50,
+                                    height: 50,
+                                    decoration: BoxDecoration(
+                                      color: selectedColor,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.grey),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  setDialogState(() {
+                                    _selectedColor = selectedColor;
+                                  });
+                                  Navigator.pop(context);
+                                },
+                                child: const Text('Done'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: selectedColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                hintText: 'Enter dog name',
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _ageController,
-              decoration: const InputDecoration(
-                labelText: 'Age',
-                hintText: 'Enter dog age',
-              ),
-              keyboardType: TextInputType.number,
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _addNewDog();
+              },
+              child: const Text('Add'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _addNewDog();
-            },
-            child: const Text('Add'),
-          ),
-        ],
       ),
     );
   }
