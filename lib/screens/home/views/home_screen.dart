@@ -43,8 +43,8 @@ class _HomeScreenState extends State<HomeScreen> {
           allDogs = dogsData.entries.map((entry) {
             return {
               'id': entry.key,
-              'name': entry.value['name'],
-              'rfid': entry.value['rfid'],
+              'name': entry.value['name'] ?? 'UnnamedDog',
+              'rfid': entry.value['rfid'] ?? 'UnknownRFID',
               'inTrap': entry.value['inTrap'] ?? false,
             };
           }).toList();
@@ -108,6 +108,31 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  Color _getDogColor(String? name, String? colorHex) {
+    if (colorHex != null && colorHex.isNotEmpty) {
+      try {
+        // Try to parse as hex color
+        if (colorHex.startsWith('0x')) {
+          return Color(int.parse(colorHex));
+        } else if (colorHex.startsWith('#')) {
+          return Color(int.parse(colorHex.replaceAll('#', '0x')));
+        }
+        // Try to parse as named color
+        switch (colorHex.toLowerCase()) {
+          case 'red':
+            return Colors.red;
+          case 'yellow':
+            return Colors.yellow;
+          default:
+            return Colors.yellow;
+        }
+      } catch (e) {
+        print('Error parsing color: $e');
+        return Colors.yellow;
+      }
+    }
+    return Colors.yellow;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -167,18 +192,24 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 50),
             Center(
               child: trappedDog != null
-                  ? Image.asset(
-                      'assets/images/${(trappedDog!['name']?.toLowerCase() == 'red' ? 'red' : 'yellow')}_dog.png',
-                      width: 200,
-                      height: 200,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(
-                          Icons.pets,
-                          size: 100,
-                          color: Colors.grey,
-                        );
-                      },
+                  ? ColorFiltered(
+                      colorFilter: ColorFilter.mode(
+                        _getDogColor(trappedDog!['name'], trappedDog!['color']).withOpacity(1.0),
+                        BlendMode.modulate,
+                      ),
+                      child: Image.asset(
+                        'assets/images/base_dog.png',
+                        width: 200,
+                        height: 200,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(
+                            Icons.pets,
+                            size: 100,
+                            color: Colors.grey,
+                          );
+                        },
+                      ),
                     )
                   : const Text(
                       '-',
