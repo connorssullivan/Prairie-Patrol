@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../../../services/rt_dogs_service.dart';
+import '../../../services/admin_service.dart';
 import 'notif_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -18,6 +19,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Timer? _timer;
   List<String> selectedDogs = [];
   List<Map<String, dynamic>> allDogs = [];
+  List<String> selectedRfids = [];
+  StreamSubscription? _rfidSubscription;
 
   @override
   void initState() {
@@ -26,11 +29,13 @@ class _HomeScreenState extends State<HomeScreen> {
     _startPeriodicCheck();
     _checkForNotifications();
     _loadAllDogs();
+    _listenToSelectedRfids();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _rfidSubscription?.cancel();
     super.dispose();
   }
 
@@ -53,6 +58,28 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       print('Error loading dogs: $e');
     }
+  }
+
+  void _listenToSelectedRfids() {
+    _rfidSubscription = dogsService.dbRef.child('selectedDog/listRfid').onValue.listen((event) {
+      if (event.snapshot.exists && event.snapshot.value != null) {
+        if (event.snapshot.value is List) {
+          List list = event.snapshot.value as List;
+          setState(() {
+            selectedRfids = list.where((item) => item != null).map((item) => item.toString()).toList();
+          });
+        } else if (event.snapshot.value is Map) {
+          Map map = event.snapshot.value as Map;
+          setState(() {
+            selectedRfids = map.values.where((item) => item != null).map((item) => item.toString()).toList();
+          });
+        }
+      } else {
+        setState(() {
+          selectedRfids = [];
+        });
+      }
+    });
   }
 
   void _startPeriodicCheck() {
@@ -98,12 +125,12 @@ class _HomeScreenState extends State<HomeScreen> {
     if (rfid == null) return;
 
     setState(() {
-      if (selectedDogs.contains(dogId)) {
-        selectedDogs.remove(dogId);
-        dogsService.removeRfidFromList(rfid); // 🗑 Remove
+      if (selectedRfids.contains(rfid)) {
+        selectedRfids.remove(rfid);
+        dogsService.removeRfidFromList(rfid);
       } else {
-        selectedDogs.add(dogId);
-        dogsService.appendRfidToList(rfid);   // ➕ Add
+        selectedRfids.add(rfid);
+        dogsService.appendRfidToList(rfid);
       }
     });
   }
@@ -138,6 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final buttonDistance = 100.0;
+    final isAdmin = AdminService.isAdmin();
 
     return Scaffold(
       body: Container(
@@ -158,7 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     spacing: 8.0,
                     runSpacing: 8.0,
                     children: allDogs.map((dog) {
-                      final isSelected = selectedDogs.contains(dog['id']);
+                      final isSelected = selectedRfids.contains(dog['rfid']);
                       final isInTrap = dog['inTrap'] == true;
                       
                       return GestureDetector(
@@ -230,16 +258,17 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: Stack(
         children: [
-          Positioned(
-            left: screenWidth / 2 - buttonDistance,
-            bottom: 150,
-            child: FloatingActionButton(
-              onPressed: _trapRandomDog,
-              tooltip: 'Trap Random Dog',
-              child: const Icon(Icons.pets),
-              heroTag: 'trapRandomDog',
+          if (isAdmin)
+            Positioned(
+              left: screenWidth / 2 - buttonDistance,
+              bottom: 150,
+              child: FloatingActionButton(
+                onPressed: _trapRandomDog,
+                tooltip: 'Trap Random Dog',
+                child: const Icon(Icons.pets),
+                heroTag: 'trapRandomDog',
+              ),
             ),
-          ),
           Positioned(
             left: screenWidth / 2 + buttonDistance,
             bottom: 150,

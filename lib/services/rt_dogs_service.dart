@@ -363,5 +363,25 @@ class RTDogsService {
     }
   }
 
+  Future<List<String>> getSelectedRfids() async {
+    try {
+      final listRef = dbRef.child('selectedDog/listRfid');
+      final snapshot = await listRef.get();
+
+      if (snapshot.exists && snapshot.value != null) {
+        if (snapshot.value is List) {
+          List list = snapshot.value as List;
+          return list.where((item) => item != null).map((item) => item.toString()).toList();
+        } else if (snapshot.value is Map) {
+          Map map = snapshot.value as Map;
+          return map.values.where((item) => item != null).map((item) => item.toString()).toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      print('❌ Error in getSelectedRfids: $e');
+      return [];
+    }
+  }
 
 }
