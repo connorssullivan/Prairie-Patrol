@@ -80,26 +80,47 @@ class RTDogsService {
         // Select a random dog
         Random random = Random();
         String randomDogKey = dogKeys[random.nextInt(dogKeys.length)];
+        String dogRfid = dogsData[randomDogKey]['rfid'] ?? '';
 
-        // Get current year and month
-        DateTime now = DateTime.now();
-        String year = now.year.toString();
-        String month = now.month.toString();
+        // Check if the dog is in the target list
+        DataSnapshot targetSnapshot = await dbRef.child('selectedDog/listRfid').get();
+        bool isTargetDog = false;
+        
+        if (targetSnapshot.exists && targetSnapshot.value != null) {
+          if (targetSnapshot.value is List) {
+            List list = targetSnapshot.value as List;
+            isTargetDog = list.contains(dogRfid);
+          } else if (targetSnapshot.value is Map) {
+            Map map = targetSnapshot.value as Map;
+            isTargetDog = map.values.contains(dogRfid);
+          }
+        }
 
-        // Reference for trapping count
-        DatabaseReference trapCountRef = dbRef.child('trapCounts/$year/$month/$randomDogKey');
+        if (isTargetDog) {
+          // Get current year and month
+          DateTime now = DateTime.now();
+          String year = now.year.toString();
+          String month = now.month.toString();
 
-        // Get the current count, initialize if not present
-        DataSnapshot trapSnapshot = await trapCountRef.get();
-        int trapCount = trapSnapshot.exists ? trapSnapshot.value as int : 0;
+          // Reference for trapping count
+          DatabaseReference trapCountRef = dbRef.child('trapCounts/$year/$month/$randomDogKey');
 
-        // Increment the count
-        await trapCountRef.set(trapCount + 1);
+          // Get the current count, initialize if not present
+          DataSnapshot trapSnapshot = await trapCountRef.get();
+          int trapCount = trapSnapshot.exists ? trapSnapshot.value as int : 0;
 
-        // Update the selected dog's inTrap status
-        await dbRef.child('dogs/$randomDogKey').update({'inTrap': true});
-        await createNotification('Dog Trapped', '${dogsData[randomDogKey]['name']} has been trapped successfully!');
-        print('${dogsData[randomDogKey]['name']} has been trapped successfully!');
+          // Increment the count
+          await trapCountRef.set(trapCount + 1);
+
+          // Update the selected dog's inTrap status
+          await dbRef.child('dogs/$randomDogKey').update({'inTrap': true});
+          await createNotification('Dog Trapped', '${dogsData[randomDogKey]['name']} has been trapped successfully!');
+          print('${dogsData[randomDogKey]['name']} has been trapped successfully!');
+        } else {
+          // Send notification that dog was scanned but not trapped
+          await createNotification('Dog Scanned', '${dogsData[randomDogKey]['name']} was scanned but not trapped (not a target dog)');
+          print('${dogsData[randomDogKey]['name']} was scanned but not trapped (not a target dog)');
+        }
       }
     } catch (e) {
       print('Error trapping dog: $e');

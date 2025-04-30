@@ -83,7 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _startPeriodicCheck() {
-    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
       _checkForTrappedDogs();
       _checkForNotifications();
       _loadAllDogs();
@@ -98,10 +98,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _checkForNotifications() async {
-    int? count = await dogsService.checkNotificationCount();
-    setState(() {
-      notificationCount = count;
-    });
+    try {
+      int? count = await dogsService.checkNotificationCount();
+      if (mounted) {
+        setState(() {
+          notificationCount = count;
+        });
+      }
+    } catch (e) {
+      print('Error checking notifications: $e');
+    }
   }
 
   void _releaseDog() async {
