@@ -40,7 +40,7 @@ const int rs = 12, en = 11, d4 = 7, d5 = 6, d6 = 4, d7 = 2;
 LiquidCrystal lcd(A0,A1,A2,A3,A4,A5);
 
 
-bool mode = false;
+int mode = 0;
 
 
 char characterList[] = {'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
@@ -70,6 +70,7 @@ void magnetONOFF() {
 void setup() {
   Serial.begin(9600);
   pinMode(MAGNET_LOCK, OUTPUT);
+  digitalWrite(MAGNET_LOCK, LOW);
   lcd.begin(16, 2);
   lcd.setCursor(0, 0);
   lcd.print("Prairie Patrol");
@@ -82,6 +83,7 @@ void setup() {
 }
 
 void loop() {
+  Serial.println("Loop");
   customKeypad.tick();
   while (customKeypad.available()) {
     keypadEvent e = customKeypad.read();
@@ -92,7 +94,7 @@ void loop() {
       Serial.println("Button pressed: " + String(Key));
       switch (Key) {
         case 'A':
-          mode = true;
+          mode = 1;
           lcd.clear();
           lcd.setCursor(0, 0);
           lcd.print("Setup Mode");
@@ -101,7 +103,7 @@ void loop() {
           selectMode();
           break;
         case 'C':
-          mode = false;
+          mode = 2;
           lcd.clear();
           lcd.setCursor(0, 0);
           lcd.print("Trap Mode");
@@ -119,20 +121,23 @@ void loop() {
 
 
 void selectMode() {
+  Serial.println("selectmode");
   switch (mode) {
-      case true:
+      case 1:
         setupMode();
         break;
-      case false:
-        //trapSetup();
+      case 2:
+        trapSetup();
         break;
       default:
         break;
     }
+  Serial.println(mode);
 }
 
 
-void setupMode() {    
+void setupMode() {   
+  Serial.println("setup"); 
   bool on1 = true;
   bool on2 = true;
   String ssid = "";
@@ -300,6 +305,7 @@ void setupMode() {
 }
 
 void trapSetup() {
+  Serial.println("trapSetup");
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("Set Magnet");
@@ -325,12 +331,13 @@ void trapSetup() {
             lcd.setCursor(0, 0);
             lcd.print("Wifi Setup");
             WifiSetup();
-            SPI.begin();
-            rfid.PCD_Init();
+            //SPI.begin();
+            //rfid.PCD_Init();
             lcd.clear();
             lcd.setCursor(0, 0);
             lcd.print("Trap Ready");
-            lcd.noDisplay();    
+            mode = 0;
+            //lcd.noDisplay();    
             break;       
           default:
             break;
@@ -338,9 +345,6 @@ void trapSetup() {
       }
     }
   }  
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("Select Mode");
 }
 
 
@@ -348,6 +352,7 @@ void trapSetup() {
 
 
 void trapMode() {
+  Serial.println("trapMode");
   bool on = true;
   while(on) {
     bool tA = fb.getBool(getPath(JUDES_FOLDER, "selectedDog")+"/trapActive");
@@ -374,6 +379,11 @@ void trapMode() {
         switch (Key) {
           case '3':
             on=false;
+            mode = 0;
+            lcd.display();
+            lcd.clear();
+            lcd.setCursor(0, 0);
+            lcd.print("Select Mode");
             break;
           case '9':
             magnetONOFF();      
@@ -384,10 +394,6 @@ void trapMode() {
       }
     }    
   }
-  lcd.display();
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("Select Mode");
 }
 
 
