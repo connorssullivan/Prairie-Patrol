@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:prairiepatrol/screens/home/home%20widgets/drawer_screen.dart';
 import 'package:prairiepatrol/screens/home/views/home_screen.dart';
 import 'package:prairiepatrol/screens/home/views/stats_screen.dart';
-import 'package:prairiepatrol/screens/home/views/test_page.dart';
 import '../../../services/rt_dogs_service.dart';
 import 'app.dart';
 
@@ -26,7 +25,6 @@ class _SkeletonState extends State<Skeleton> {
   final List<Widget> _pages = [
     const HomeScreen(),
     const StatsScreen(),
-    const TestPage(),
   ];
 
   @override
@@ -148,10 +146,6 @@ class _SkeletonState extends State<Skeleton> {
                     BottomNavigationBarItem(
                       icon: Icon(Icons.bar_chart),
                       label: 'Stats',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.settings),
-                      label: 'Test',
                     ),
                   ],
                 ),
