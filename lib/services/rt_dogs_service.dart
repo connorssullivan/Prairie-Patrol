@@ -114,6 +114,8 @@ class RTDogsService {
 
           // Update the selected dog's inTrap status
           await dbRef.child('dogs/$randomDogKey').update({'inTrap': true});
+          // Set caughtDog to the RFID of the trapped dog
+          await dbRef.child('caughtDog').set(dogRfid);
           await createNotification('Dog Trapped', '${dogsData[randomDogKey]['name']} has been trapped successfully!');
           print('${dogsData[randomDogKey]['name']} has been trapped successfully!');
         } else {
