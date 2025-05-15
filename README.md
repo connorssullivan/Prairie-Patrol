@@ -118,6 +118,7 @@ a5. a1-a3 are protected by a metal mesh.
 a6. multiple 3d printed parts were made to house and protect the above parts
 a7. The outside 3d printed boxes are covered in a spray rubber to protect against water. 
 
+![image](https://github.com/user-attachments/assets/a667ce9a-9426-40f3-86d6-cde419fb2114)
 
 
 ### Key Components
