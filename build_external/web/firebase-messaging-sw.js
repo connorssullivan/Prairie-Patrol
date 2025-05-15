@@ -30,26 +30,14 @@ messaging.requestPermission()
 
 // Handle background messages
 messaging.onBackgroundMessage((payload) => {
-  console.log('📨 Received background message:', payload);
+  console.log('Received background message:', payload);
 
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
-    icon: '/icons/Icon-192.png',
-    badge: '/icons/Icon-192.png',
+    icon: '/icons/appstore.png',
+    badge: '/icons/appstore.png',
     vibrate: [200, 100, 200],
-    tag: 'prairie-patrol-notification',
-    renotify: true,
-    requireInteraction: true,
-    actions: [
-      {
-        action: 'open',
-        title: 'Open App'
-      }
-    ],
-    // iOS specific options
-    silent: false,
-    timestamp: Date.now(),
     data: payload.data
   };
 
@@ -59,24 +47,22 @@ messaging.onBackgroundMessage((payload) => {
 // Handle notification click
 self.addEventListener('notificationclick', function(event) {
   console.log('Notification click received:', event);
-  
+
   event.notification.close();
-  
+
+  // This looks to see if the current is already open and focuses if it is
   event.waitUntil(
     clients.matchAll({
-      type: 'window',
-      includeUncontrolled: true
-    }).then(function(clientList) {
-      if (clientList.length > 0) {
-        let client = clientList[0];
-        for (let i = 0; i < clientList.length; i++) {
-          if (clientList[i].focused) {
-            client = clientList[i];
-          }
-        }
-        return client.focus();
+      type: "window"
+    })
+    .then(function(clientList) {
+      for (var i = 0; i < clientList.length; i++) {
+        var client = clientList[i];
+        if (client.url == '/' && 'focus' in client)
+          return client.focus();
       }
-      return clients.openWindow('/');
+      if (clients.openWindow)
+        return clients.openWindow('/');
     })
   );
 });

@@ -18,8 +18,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="icon" type="image/png" href="icons/appstore.png"/>
+  <link rel="apple-touch-icon" href="icons/appstore.png">
   
   <title>Prairie Patrol</title>
   <link rel="manifest" href="manifest.json">
@@ -110,17 +110,29 @@
         console.log('📦 Firebase SDK found, initializing app...');
         firebase.initializeApp(firebaseConfig);
         
-        // Register service worker for messaging
-        const registration = await registerServiceWorker();
-        if (registration) {
-          const messaging = firebase.messaging();
-          messaging.useServiceWorker(registration);
-          
-          // Request notification permission
-          const permissionGranted = await requestNotificationPermission();
-          if (permissionGranted) {
-            const token = await messaging.getToken();
-            console.log('FCM Token:', token);
+        // Check if running in iOS Safari
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        
+        if (isIOS && isSafari) {
+          console.log('📱 Running in iOS Safari - Push notifications not supported');
+          // Store a flag in localStorage to inform the Flutter app
+          localStorage.setItem('iosSafari', 'true');
+        } else {
+          // Register service worker for messaging
+          const registration = await registerServiceWorker();
+          if (registration) {
+            const messaging = firebase.messaging();
+            messaging.useServiceWorker(registration);
+            
+            // Request notification permission
+            const permissionGranted = await requestNotificationPermission();
+            if (permissionGranted) {
+              const token = await messaging.getToken();
+              console.log('FCM Token:', token);
+              // Store the token in localStorage for the Flutter app
+              localStorage.setItem('fcmToken', token);
+            }
           }
         }
         

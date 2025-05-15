@@ -21,42 +21,54 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> allDogs = [];
   List<String> selectedRfids = [];
   StreamSubscription? _rfidSubscription;
+  StreamSubscription? _caughtDogSubscription;
+  String? caughtDogRfid;
 
   @override
   void initState() {
     super.initState();
-    _checkForTrappedDogs();
     _startPeriodicCheck();
     _checkForNotifications();
     _loadAllDogs();
     _listenToSelectedRfids();
+    _listenToCaughtDog();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
     _rfidSubscription?.cancel();
+    _caughtDogSubscription?.cancel();
     super.dispose();
   }
 
-  Future<void> _loadAllDogs() async {
-    try {
-      DataSnapshot snapshot = await dogsService.dbRef.child('dogs').get();
-      if (snapshot.exists) {
-        final dogsData = Map<String, dynamic>.from(snapshot.value as Map);
+  void _listenToCaughtDog() {
+    _caughtDogSubscription = dogsService.dbRef.child('caughtDog').onValue.listen((event) {
+      if (event.snapshot.exists && event.snapshot.value != null) {
         setState(() {
-          allDogs = dogsData.entries.map((entry) {
-            return {
-              'id': entry.key,
-              'name': entry.value['name'] ?? 'UnnamedDog',
-              'rfid': entry.value['rfid'] ?? 'UnknownRFID',
-              'inTrap': entry.value['inTrap'] ?? false,
-            };
-          }).toList();
+          caughtDogRfid = event.snapshot.value.toString();
+          _updateTrappedDog();
+        });
+      } else {
+        setState(() {
+          caughtDogRfid = null;
+          trappedDog = null;
         });
       }
-    } catch (e) {
-      print('Error loading dogs: $e');
+    });
+  }
+
+  void _updateTrappedDog() {
+    if (caughtDogRfid != null) {
+      final dog = allDogs.firstWhere(
+        (d) => d['rfid'] == caughtDogRfid,
+        orElse: () => {},
+      );
+      if (dog.isNotEmpty) {
+        setState(() {
+          trappedDog = dog;
+        });
+      }
     }
   }
 
@@ -84,17 +96,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _startPeriodicCheck() {
     _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
-      _checkForTrappedDogs();
       _checkForNotifications();
       _loadAllDogs();
     });
   }
 
-  void _checkForTrappedDogs() async {
-    Map<String, dynamic>? dogInTrap = await dogsService.checkDogsInTrap();
-    setState(() {
-      trappedDog = dogInTrap;
-    });
+  Future<void> _loadAllDogs() async {
+    try {
+      DataSnapshot snapshot = await dogsService.dbRef.child('dogs').get();
+      if (snapshot.exists) {
+        final dogsData = Map<String, dynamic>.from(snapshot.value as Map);
+        setState(() {
+          allDogs = dogsData.entries.map((entry) {
+            return {
+              'id': entry.key,
+              'name': entry.value['name'] ?? 'UnnamedDog',
+              'rfid': entry.value['rfid'] ?? 'UnknownRFID',
+              'inTrap': entry.value['inTrap'] ?? false,
+              'color': entry.value['color'],
+            };
+          }).toList();
+          _updateTrappedDog();
+        });
+      }
+    } catch (e) {
+      print('Error loading dogs: $e');
+    }
   }
 
   void _checkForNotifications() async {
@@ -113,6 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _releaseDog() async {
     if (trappedDog != null) {
       await dogsService.releaseDog(trappedDog!['name']);
+      await dogsService.dbRef.child('caughtDog').set('');
       setState(() {
         trappedDog = null;
       });
@@ -121,7 +149,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _trapRandomDog() async {
     await dogsService.trapRandomDog();
-    _checkForTrappedDogs();
+    _checkForNotifications();
+    _loadAllDogs();
   }
 
   void _toggleDogSelection(String dogId) async {
@@ -141,27 +170,42 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Color _getDogColor(String? name, String? colorHex) {
-    if (colorHex != null && colorHex.isNotEmpty) {
+  Color _getDogColor(String? name, dynamic colorValue) {
+    if (colorValue != null) {
       try {
-        // Try to parse as hex color
-        if (colorHex.startsWith('0x')) {
-          return Color(int.parse(colorHex));
-        } else if (colorHex.startsWith('#')) {
-          return Color(int.parse(colorHex.replaceAll('#', '0x')));
+        // Handle string color values
+        if (colorValue is String) {
+          // Try to parse as hex color
+          if (colorValue.startsWith('0x')) {
+            return Color(int.parse(colorValue));
+          } else if (colorValue.startsWith('#')) {
+            return Color(int.parse(colorValue.replaceAll('#', '0x')));
+          }
+          // Try to parse as named color
+          switch (colorValue.toLowerCase()) {
+            case 'red':
+              return Colors.red;
+            case 'yellow':
+              return Colors.yellow;
+            default:
+              return Colors.yellow;
+          }
         }
-        // Try to parse as named color
-        switch (colorHex.toLowerCase()) {
-          case 'red':
-            return Colors.red;
-          case 'yellow':
-            return Colors.yellow;
-          default:
-            return Colors.yellow;
+        // Handle numeric color values
+        else if (colorValue is int) {
+          return Color(colorValue);
+        }
+        // Handle Firebase Value objects
+        else if (colorValue is Map) {
+          final value = colorValue['value'];
+          if (value is String && value.startsWith('0x')) {
+            return Color(int.parse(value));
+          } else if (value is int) {
+            return Color(value);
+          }
         }
       } catch (e) {
         print('Error parsing color: $e');
-        return Colors.yellow;
       }
     }
     return Colors.yellow;
@@ -174,143 +218,174 @@ class _HomeScreenState extends State<HomeScreen> {
     final isAdmin = AdminService.isAdmin();
 
     return Scaffold(
-      body: Container(
+      body: SafeArea(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Target Dogs:',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8.0,
-                    runSpacing: 8.0,
-                    children: allDogs.map((dog) {
-                      final isSelected = selectedRfids.contains(dog['rfid']);
-                      final isInTrap = dog['inTrap'] == true;
-                      
-                      return GestureDetector(
-                        onTap: () => _toggleDogSelection(dog['id']),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Target Dogs:',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           ),
-                          decoration: BoxDecoration(
-                            color: isSelected ? Colors.blue : Colors.grey[200],
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isInTrap ? Colors.green : Colors.red,
-                              width: 2,
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8.0,
+                            runSpacing: 8.0,
+                            children: allDogs.map((dog) {
+                              final isSelected = selectedRfids.contains(dog['rfid']);
+                              final isInTrap = dog['inTrap'] == true;
+                              
+                              return GestureDetector(
+                                onTap: () => _toggleDogSelection(dog['id']),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isSelected ? Colors.blue : Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: isInTrap ? Colors.green : Colors.red,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    dog['name'],
+                                    style: TextStyle(
+                                      color: isSelected ? Colors.white : Colors.black,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Center(
+                      child: trappedDog != null
+                          ? Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ColorFiltered(
+                                  colorFilter: ColorFilter.mode(
+                                    _getDogColor(trappedDog!['name'], trappedDog!['color']).withOpacity(1.0),
+                                    BlendMode.modulate,
+                                  ),
+                                  child: Image.asset(
+                                    'assets/images/base_dog.png',
+                                    width: 200,
+                                    height: 200,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Icon(
+                                        Icons.pets,
+                                        size: 100,
+                                        color: Colors.grey,
+                                      );
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: _getDogColor(trappedDog!['name'], trappedDog!['color']),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.grey.shade300, width: 2),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  trappedDog!['name'] ?? 'Unknown Dog',
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : const Text(
+                              '-',
+                              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                             ),
-                          ),
-                          child: Text(
-                            dog['name'],
-                            style: TextStyle(
-                              color: isSelected ? Colors.white : Colors.black,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Place the floating action buttons above the Release button
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (isAdmin)
+                    FloatingActionButton(
+                      onPressed: _trapRandomDog,
+                      tooltip: 'Trap Random Dog',
+                      child: const Icon(Icons.pets),
+                      heroTag: 'trapRandomDog',
+                    ),
+                  if (isAdmin)
+                    const SizedBox(width: 50),
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      FloatingActionButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => NotificationScreen()),
+                          );
+                        },
+                        tooltip: 'Go to Notifications',
+                        child: const Icon(Icons.notifications),
+                      ),
+                      if (notificationCount != null && notificationCount! > 0)
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: CircleAvatar(
+                            radius: 10,
+                            backgroundColor: Colors.red,
+                            child: Text(
+                              notificationCount.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                         ),
-                      );
-                    }).toList(),
+                    ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 50),
-            Center(
-              child: trappedDog != null
-                  ? ColorFiltered(
-                      colorFilter: ColorFilter.mode(
-                        _getDogColor(trappedDog!['name'], trappedDog!['color']).withOpacity(1.0),
-                        BlendMode.modulate,
-                      ),
-                      child: Image.asset(
-                        'assets/images/base_dog.png',
-                        width: 200,
-                        height: 200,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(
-                            Icons.pets,
-                            size: 100,
-                            color: Colors.grey,
-                          );
-                        },
-                      ),
-                    )
-                  : const Text(
-                      '-',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-            ),
-            const SizedBox(height: 200),
-            ElevatedButton(
-              onPressed: trappedDog != null ? _releaseDog : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: trappedDog != null ? Colors.red : Colors.grey,
-                minimumSize: const Size(200, 60),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: ElevatedButton(
+                onPressed: trappedDog != null ? _releaseDog : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: trappedDog != null ? Colors.red : Colors.grey,
+                  minimumSize: const Size(200, 60),
+                ),
+                child: const Text('Release'),
               ),
-              child: const Text('Release'),
             ),
           ],
         ),
-      ),
-      floatingActionButton: Stack(
-        children: [
-          if (isAdmin)
-            Positioned(
-              left: screenWidth / 2 - buttonDistance,
-              bottom: 150,
-              child: FloatingActionButton(
-                onPressed: _trapRandomDog,
-                tooltip: 'Trap Random Dog',
-                child: const Icon(Icons.pets),
-                heroTag: 'trapRandomDog',
-              ),
-            ),
-          Positioned(
-            left: screenWidth / 2 + buttonDistance,
-            bottom: 150,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                FloatingActionButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => NotificationScreen()),
-                    );
-                  },
-                  tooltip: 'Go to Notifications',
-                  child: const Icon(Icons.notifications),
-                ),
-                if (notificationCount != null && notificationCount! > 0)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: CircleAvatar(
-                      radius: 10,
-                      backgroundColor: Colors.red,
-                      child: Text(
-                        notificationCount.toString(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
